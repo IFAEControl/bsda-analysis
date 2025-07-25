@@ -39,7 +39,7 @@ def computefft(buffer, freq, result, chanels=range(20)):
 
 def save_file(result, chanels=range(20)):
     for i in chanels:
-        result[i].to_csv(time.strftime('%Y%m%d%H%M%S')+f'-fft-{i}')
+        result[i].to_csv(time.strftime('%Y%m%d%H%M%S',time.gmtime())+f'-fft-{i}')
     
 
 x = np.fft.rfftfreq(2048)
@@ -54,12 +54,15 @@ while True:
         if first and len(buffer[0])== 2048:
             diff = np.diff(buffer[20])
             timestep = np.mean(diff)
-            freq = np.fft.rfftfreq(2048,timestep)
+            freq = np.fft.rfftfreq(2048,timestep/1.e6)
+            refactor_time = time.time() - buffer[20][-1]/1.e6
             result = computefft(buffer, freq, result)#, chanels = [0,1])
             first= False
             #print(result)
             print('Computed fft')
-        elif not first and time.time()-result[0]['timestamp'].iloc[-1] > 5 : 
+        elif not first and time.time()-result[0]['timestamp'].iloc[-1] > 5 :
+            ts = refactor_time + buffer[20]/1.e6
+            if time.time() - ts[-1] > 0.1: raise Exception("Old data") 
             result = computefft(buffer, freq, result)#, chanels = [0,1])
             print('Computed fft')
             #print(result)
